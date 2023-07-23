@@ -13,7 +13,7 @@ func main() {
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
 
 	e.GET("/", sessionHandler)
-	e.Logger.Panic(e.Start("localhost:8080"))
+	e.Logger.Panic(e.Start(":8080"))
 }
 
 func sessionHandler(c echo.Context) error {
