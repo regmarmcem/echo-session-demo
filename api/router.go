@@ -23,6 +23,7 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 
 func NewRouter(db *gorm.DB) *echo.Echo {
 	e := echo.New()
+
 	renderer := &TemplateRenderer{
 		templates: template.Must(template.ParseGlob("static/*.html")),
 	}
@@ -30,11 +31,18 @@ func NewRouter(db *gorm.DB) *echo.Echo {
 	e.Static("/assets", "./static/assets")
 	e.Static("/css", "./static/css")
 	e.Static("/js", "./static/js")
+
+	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
+
 	uSer := service.NewUserService(db)
 	uCon := controller.NewUserController(uSer)
-	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
+
 	e.GET("/", sessionHandler)
+	e.GET("/home", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "home.html", nil)
+	})
 	e.GET("/signup", uCon.GetSignup)
+	e.POST("/signup", uCon.PostSignup)
 	return e
 }
 
