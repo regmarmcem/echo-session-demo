@@ -8,7 +8,7 @@ RUN go build -o main
 FROM gcr.io/distroless/static-debian11
 WORKDIR /app
 USER nonroot
-COPY --from=builder /src/main ./
+COPY --from=builder /src/main /src/.env ./
 EXPOSE 8080
 CMD ["./main"]
 

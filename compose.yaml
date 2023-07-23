@@ -1,6 +1,27 @@
 services:
   app:
+    depends_on:
+      - db
     container_name: echo-app
     build: .
+    env_file:
+      - .env
     ports:
       - "8080:8080"
+  db:
+    container_name: echo-db
+    image: postgres:15.3
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+    volumes:
+      - echo-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U ${POSTGRES_USER} -d ${POSGRES_DB} -c \"SELECT 1\" || exit 1"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+volumes:
+  echo-db-data:
