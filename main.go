@@ -2,13 +2,10 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 
-	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
-	"github.com/labstack/echo-contrib/session"
-	"github.com/labstack/echo/v4"
+	"github.com/regmarmcem/echo-session-demo/api"
 	"github.com/regmarmcem/echo-session-demo/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -27,22 +24,6 @@ func main() {
 	}
 
 	db.AutoMigrate(&model.User{})
-
-	e := echo.New()
-	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
-
-	e.GET("/", sessionHandler)
+	e := api.NewRouter(db)
 	e.Logger.Panic(e.Start(":8080"))
-}
-
-func sessionHandler(c echo.Context) error {
-	sess, _ := session.Get("session", c)
-	sess.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   86400 * 7,
-		HttpOnly: true,
-	}
-	sess.Values["foo"] = "bar"
-	sess.Save(c.Request(), c.Response())
-	return c.NoContent(http.StatusOK)
 }
