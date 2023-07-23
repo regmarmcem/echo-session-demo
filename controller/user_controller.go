@@ -39,3 +39,25 @@ func (ctr *UserController) PostSignup(c echo.Context) error {
 
 	return c.Redirect(http.StatusSeeOther, "/home")
 }
+
+func (ctr *UserController) GetSignin(c echo.Context) error {
+	return c.Render(http.StatusOK, "signin.html", nil)
+}
+
+func (ctr *UserController) PostSignin(c echo.Context) error {
+	email := html.EscapeString(c.FormValue("email"))
+	password := html.EscapeString(c.FormValue("password"))
+
+	if email == "" || password == "" {
+		log.Println("Invalid Email or Password")
+		return c.Redirect(http.StatusSeeOther, "/signup")
+	}
+
+	_, err := ctr.s.Signin(email, password)
+	if err != nil {
+		log.Println(err)
+		return c.Redirect(http.StatusSeeOther, "/signin")
+	}
+
+	return c.Redirect(http.StatusSeeOther, "/home")
+}

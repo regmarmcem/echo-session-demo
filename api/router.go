@@ -43,6 +43,8 @@ func NewRouter(db *gorm.DB) *echo.Echo {
 	})
 	e.GET("/signup", uCon.GetSignup)
 	e.POST("/signup", uCon.PostSignup)
+	e.GET("/signin", uCon.GetSignin)
+	e.POST("/signin", uCon.PostSignin)
 	return e
 }
 
