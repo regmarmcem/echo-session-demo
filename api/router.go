@@ -3,6 +3,7 @@ package api
 import (
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/sessions"
@@ -21,7 +22,7 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-func NewRouter(db *gorm.DB) *echo.Echo {
+func NewRouter(db *gorm.DB, store sessions.Store) *echo.Echo {
 	e := echo.New()
 
 	renderer := &TemplateRenderer{
@@ -32,7 +33,7 @@ func NewRouter(db *gorm.DB) *echo.Echo {
 	e.Static("/css", "./static/css")
 	e.Static("/js", "./static/js")
 
-	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
+	e.Use(session.Middleware(store))
 
 	uSer := service.NewUserService(db)
 	uCon := controller.NewUserController(uSer)
@@ -40,7 +41,8 @@ func NewRouter(db *gorm.DB) *echo.Echo {
 	e.GET("/", sessionHandler)
 	e.GET("/home", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "home.html", nil)
-	})
+	}, CheckSignin)
+	e.GET("/signout", uCon.GetSignout, CheckSignin)
 	e.GET("/signup", uCon.GetSignup)
 	e.POST("/signup", uCon.PostSignup)
 	e.GET("/signin", uCon.GetSignin)
@@ -58,4 +60,39 @@ func sessionHandler(c echo.Context) error {
 	sess.Values["foo"] = "bar"
 	sess.Save(c.Request(), c.Response())
 	return c.NoContent(http.StatusOK)
+}
+
+func CheckSignin(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) (err error) {
+		sess, err := session.Get("session", c)
+		if err != nil {
+			log.Println(err)
+			log.Println("CheckSignin() failed")
+			c.Redirect(http.StatusSeeOther, "/signin")
+		}
+
+		user, ok := sess.Values["user"].(string)
+
+		if !ok || user == "" {
+			c.Redirect(http.StatusSeeOther, "/signin")
+		}
+		return next(c)
+	}
+}
+
+func CheckSignout(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) (err error) {
+		sess, err := session.Get("session", c)
+		if err != nil {
+			log.Println(err)
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+
+		user, ok := sess.Values["user"].(string)
+
+		if ok && user != "" {
+			c.Redirect(http.StatusSeeOther, "/home")
+		}
+		return next(c)
+	}
 }

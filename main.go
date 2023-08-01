@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"os"
 
+	"github.com/go-redis/redis/v8"
+	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
+	"github.com/rbcervilla/redisstore/v8"
 	"github.com/regmarmcem/echo-session-demo/api"
 	"github.com/regmarmcem/echo-session-demo/model"
 	"gorm.io/driver/postgres"
@@ -24,6 +29,25 @@ func main() {
 	}
 
 	db.AutoMigrate(&model.User{})
-	e := api.NewRouter(db)
-	e.Logger.Panic(e.Start(":8080"))
+
+	client := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
+	})
+	store, err := redisstore.NewRedisStore(context.Background(), client)
+	if err != nil {
+		panic("failed to create redis store")
+	}
+
+	store.KeyPrefix("session_")
+	store.Options(sessions.Options{
+		Path:     "/",
+		Domain:   "localhost",
+		MaxAge:   3600,
+		Secure:   false,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	e := api.NewRouter(db, store)
+	e.Logger.Debug(e.Start(":8080"))
 }
