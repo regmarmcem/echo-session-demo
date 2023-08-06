@@ -43,10 +43,10 @@ func NewRouter(db *gorm.DB, store sessions.Store) *echo.Echo {
 		return c.Render(http.StatusOK, "home.html", nil)
 	}, CheckSignin)
 	e.GET("/signout", uCon.GetSignout, CheckSignin)
-	e.GET("/signup", uCon.GetSignup)
-	e.POST("/signup", uCon.PostSignup)
-	e.GET("/signin", uCon.GetSignin)
-	e.POST("/signin", uCon.PostSignin)
+	e.GET("/signup", uCon.GetSignup, CheckSignout)
+	e.POST("/signup", uCon.PostSignup, CheckSignout)
+	e.GET("/signin", uCon.GetSignin, CheckSignout)
+	e.POST("/signin", uCon.PostSignin, CheckSignout)
 	return e
 }
 
